@@ -1,0 +1,21 @@
+name: deploy to remote
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: gulp build
+        uses: actions/setup-node@v1
+        run: yarn install && yarn build
+      - name: ssh key generate
+        run: echo "$SSH_PRIVATE_KEY" > key && chmod 600 key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: rsync deploy
+        run: rsync -auzrv -e "ssh -i key -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -p 10022" --delete ./dist/* twor@sv8382.xserver.jp:/home/twor/develop36-2.site/public_html/gha/ --exclude .htaccess
